@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+# -*- mode: python -*-
+
+"""
+Show runs inside a project.
+"""
+
+# You need to run this program with all the scipion env variables defined.
+# (For example, with "scipion run sci-ls".)
+
+import sys
+from argparse import ArgumentParser
+
+from pyworkflow.manager import Manager
+
+
+def main():
+   parser = ArgumentParser(description=__doc__)
+   add = parser.add_argument  # short notation
+   add('project', help='name of the project to inspect')
+   add('--graph', action='store_true', help='print a graphic representation')
+   args = parser.parse_args()
+
+   manager = Manager()
+
+   try:
+      proj = manager.loadProject(args.project)
+   except Exception as e:
+      sys.exit(e)
+
+   if args.graph:
+      proj.getRunsGraph().printDot()
+   else:
+      for run in proj.getRuns():
+         print run
+
+
+if __name__ == '__main__':
+   main()

@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+# -*- mode: python -*-
+
+"""
+Run a test and open interactive console where you can play with it.
+"""
+
+# You need to run this program with all the scipion env variables defined.
+# (For example, with "scipion run sci-proj".)
+
+import sys
+import os
+from argparse import ArgumentParser
+from importlib import import_module
+import unittest
+
+sys.path.append('/usr/lib/python2.7/dist-packages/')  # cheating :)
+from IPython.terminal.embed import embed
+
+
+def main():
+   parser = ArgumentParser(description=__doc__)
+   add = parser.add_argument  # short notation
+   add('tests', metavar='TEST', nargs='*', help='test to run and inspect')
+   add('--list', action='store_true', help='list the available tests')
+   args = parser.parse_args()
+
+   tests_all = unittest.TestSuite()
+   tests_all.addTests(unittest.defaultTestLoader.discover(
+      'pyworkflow/tests', top_level_dir=os.environ['SCIPION_HOME']))
+
+   if args.list:
+       # First flatten the list of tests.
+      tests_flat = []
+      toCheck = [t for t in tests_all]
+      while toCheck:
+         test = toCheck.pop()
+         if isinstance(test, unittest.TestSuite):
+            toCheck += [t for t in test]
+         else:
+            tests_flat.append(test)
+
+      for t in tests_flat:
+         print t.id()
+      sys.exit()
+   
+   # TODO: discover the module to import!
+   mod = import_module('pyworkflow.tests.em.protocols.test_protocols_xmipp_3d')
+   tests = [getattr(mod, x) for x in args.tests]
+
+   suites = [unittest.TestLoader().loadTestsFromTestCase(x) for x in tests]
+   for suite in suites:
+      unittest.TextTestRunner(verbosity=2).run(suite)
+
+   print """
+Defined variables:
+    tests - test classes (%s)
+    suites - results of running the test suites in "tests"
+
+You can now do something like:
+    t = suites[0]._tests[0]
+    print t.protImport1
+""" % args.tests
+   embed(display_banner=False)
+
+
+
+if __name__ == '__main__':
+   main()
